@@ -1,0 +1,51 @@
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ---------- 虚拟环境（约 1.1G，禁止提交） ----------
+.venv/
+venv/
+env/
+ENV/
+
+# ---------- PaddleOCR 模型缓存（首次运行自动下载，约 20MB） ----------
+.paddleocr/
+*.pdparams
+*.pdmodel
+*.pdiparams
+
+# ---------- 离线部署产物 ----------
+packages/
+*.whl
+*.tar.gz
+
+# ---------- 日志与临时文件 ----------
+logs/
+*.log
+tmp/
+temp/
+*.tmp
+
+# ---------- 测试用图片/视频（可能含个人隐私，禁止提交） ----------
+test_images/
+test_videos/
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.mp4
+!docs/assets/*.png
+
+# ---------- 编辑器 / 系统 ----------
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

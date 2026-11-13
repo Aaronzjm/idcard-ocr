@@ -1,0 +1,33 @@
+﻿# ============================================================
+# 身份证 OCR 服务依赖清单
+# 适用 Python: 3.8 ~ 3.12（不支持 3.13，paddlepaddle 2.6.2 无对应 wheel）
+# 安装: pip install -r requirements.txt
+# 国内加速: pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+# ============================================================
+
+# ---------- Web 服务 ----------
+fastapi==0.104.1
+uvicorn==0.24.0.post1
+python-multipart==0.0.6        # FastAPI 处理 multipart/form-data 文件上传必需
+
+# ---------- OCR 引擎 ----------
+paddlepaddle==2.6.2            # CPU 版；需 GPU 请改装 paddlepaddle-gpu 并参考官方文档
+paddleocr==2.7.3
+
+# ---------- 图像处理 ----------
+opencv-python==4.8.1.78
+numpy==1.26.4                  # 必须 <2.0，paddlepaddle 2.6.2 不兼容 numpy 2.x
+pillow==10.4.0
+
+# ---------- HTTP 下载（视频检测接口用） ----------
+requests==2.32.3
+
+# ---------- PaddleOCR 必需的底层依赖（版本锁死避免解析冲突） ----------
+pyclipper==1.3.0.post5         # 文本检测框扩张
+shapely==2.0.6                 # 几何运算
+lmdb==1.5.1                    # 识别模型数据读取
+rapidfuzz==3.9.6               # 字符串模糊匹配
+protobuf==3.20.2               # paddleocr 2.7.3 硬性要求，4.x 会报错
+pyyaml==6.0.1
+tqdm==4.66.5
+six==1.16.0
