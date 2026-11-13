@@ -11,7 +11,8 @@ import time
 import uvicorn
 from fastapi import Body, FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from ocr_core import recognize_id_card
@@ -56,6 +57,32 @@ if CORS_ORIGINS:
         allow_credentials=True,
         allow_methods=["GET", "POST"],
         allow_headers=["Content-Type", "Authorization"],
+    )
+
+# -------------------------- 静态资源（可视化操作页） --------------------------
+# 挂载 static 目录，访问根路径 "/" 返回可视化页面，方便直接在浏览器里上传图片 / 填视频 URL 使用
+_STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+
+if os.path.isdir(_STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
+
+
+@app.get("/", include_in_schema=False)
+async def index():
+    """返回可视化操作页（若存在），否则返回简单接口说明"""
+    index_path = os.path.join(_STATIC_DIR, "index.html")
+    if os.path.isfile(index_path):
+        return FileResponse(index_path)
+    return JSONResponse(
+        {
+            "code": 0,
+            "msg": "身份证 OCR 识别服务运行中",
+            "endpoints": {
+                "health": "GET /health",
+                "ocr_idcard": "POST /api/ocr/idcard (multipart/form-data, 字段名 file)",
+                "video_check": "POST /api/video/check (application/json, 字段 video_url)",
+            },
+        }
     )
 
 
@@ -157,7 +184,7 @@ async def ocr_idcard(
 if __name__ == "__main__":
     print("=" * 60)
     print("[启动] 身份证 OCR 识别服务")
-    print(f"[监听] http://{HOST}:{PORT}")
+    print(f"[页面] http://{HOST}:{PORT}          （可视化操作页）")
     print("[健康] GET  /health")
     print("[接口] POST /api/ocr/idcard")
     print("[接口] POST /api/video/check")

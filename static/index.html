@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>身份证 OCR 识别 · 视频质量检测</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --border: #e5e9f2;
+      --text: #1f2733;
+      --muted: #6b7280;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success: #16a34a;
+      --warn: #d97706;
+      --danger: #dc2626;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 32px 20px 64px;
+    }
+    .container { max-width: 1080px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 32px; }
+    header h1 { font-size: 28px; font-weight: 700; letter-spacing: 0.5px; }
+    header p { color: var(--muted); margin-top: 6px; font-size: 14px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+    }
+    .card h2 { font-size: 18px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+    .card .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+    .badge {
+      display: inline-block; font-size: 12px; font-weight: 500;
+      padding: 2px 8px; border-radius: 999px; background: #eef2ff; color: var(--primary);
+    }
+    .dropzone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 28px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      background: #fafbfe;
+    }
+    .dropzone:hover, .dropzone.dragover { border-color: var(--primary); background: #f0f5ff; }
+    .dropzone .icon { font-size: 32px; }
+    .dropzone p { color: var(--muted); font-size: 14px; margin-top: 8px; }
+    .dropzone .hint { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+    .preview { margin-top: 16px; display: none; text-align: center; }
+    .preview img { max-width: 100%; max-height: 220px; border-radius: 8px; border: 1px solid var(--border); }
+    .field { margin-top: 16px; }
+    .field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+    .field input[type="url"] {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 14px; transition: border-color 0.15s;
+    }
+    .field input[type="url"]:focus { outline: none; border-color: var(--primary); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      width: 100%; margin-top: 16px; padding: 11px 16px;
+      background: var(--primary); color: #fff; border: none; border-radius: 8px;
+      font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.15s;
+    }
+    .btn:hover { background: var(--primary-hover); }
+    .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+    .btn.ghost {
+      background: transparent; color: var(--primary); border: 1px solid var(--primary);
+    }
+    .btn.ghost:hover { background: #eef2ff; }
+    .result { margin-top: 20px; display: none; }
+    .result .status {
+      display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px;
+    }
+    .result .status .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .result.ok .status { color: var(--success); }
+    .result.ok .status .dot { background: var(--success); }
+    .result.fail .status { color: var(--danger); }
+    .result.fail .status .dot { background: var(--danger); }
+    .result table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+    .result table th, .result table td {
+      text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border);
+    }
+    .result table th { width: 110px; color: var(--muted); font-weight: 500; background: #fafbfe; }
+    .result table td { word-break: break-all; }
+    .result .msg { margin-top: 10px; color: var(--muted); font-size: 13px; }
+    .result .cost { margin-top: 6px; font-size: 12px; color: #9ca3af; }
+    .spinner {
+      display: inline-block; width: 16px; height: 16px; border: 2px solid #fff;
+      border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    @media (max-width: 560px) { .kv-grid { grid-template-columns: 1fr; } }
+    .kv {
+      background: #fafbfe; border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+    }
+    .kv .k { font-size: 12px; color: var(--muted); }
+    .kv .v { font-size: 14px; font-weight: 500; word-break: break-all; }
+    .kv .v.yes { color: var(--success); }
+    .kv .v.no { color: var(--danger); }
+    footer { text-align: center; margin-top: 40px; color: #9ca3af; font-size: 12px; }
+    code { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>智能识别服务</h1>
+      <p>身份证 OCR 识别 · 视频清晰度 / 拉伸检测</p>
+    </header>
+
+    <div class="grid">
+      <!-- ============ 身份证 OCR 识别 ============ -->
+      <div class="card">
+        <h2>🪪 身份证识别 <span class="badge">POST /api/ocr/idcard</span></h2>
+        <p class="subtitle">上传身份证正反面照片，自动提取结构化信息</p>
+
+        <div class="dropzone" id="dropzone">
+          <div class="icon">📷</div>
+          <p>点击选择图片，或拖拽图片到此处</p>
+          <p class="hint">支持 jpg / png / webp，最大 5MB</p>
+          <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" hidden>
+        </div>
+        <div class="preview" id="preview">
+          <img id="previewImg" alt="预览">
+        </div>
+        <button class="btn" id="ocrBtn" disabled>
+          <span class="spinner" id="ocrSpinner" style="display:none"></span>
+          <span id="ocrBtnText">开始识别</span>
+        </button>
+
+        <div class="result" id="ocrResult"></div>
+      </div>
+
+      <!-- ============ 视频质量检测 ============ -->
+      <div class="card">
+        <h2>🎬 视频质量检测 <span class="badge">POST /api/video/check</span></h2>
+        <p class="subtitle">输入公网视频 URL，检测画面清晰度与是否拉伸变形</p>
+
+        <div class="field">
+          <label for="videoUrl">视频地址（公网可访问的 mp4 等）</label>
+          <input type="url" id="videoUrl" placeholder="https://example.com/video.mp4">
+        </div>
+        <button class="btn" id="videoBtn" disabled>
+          <span class="spinner" id="videoSpinner" style="display:none"></span>
+          <span id="videoBtnText">开始检测</span>
+        </button>
+
+        <div class="result" id="videoResult"></div>
+      </div>
+    </div>
+
+    <footer>
+      服务接口：<code>POST /api/ocr/idcard</code> · <code>POST /api/video/check</code> · <code>GET /health</code>
+    </footer>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    /* ---------- 图片上传 ---------- */
+    const dropzone = $('dropzone');
+    const fileInput = $('fileInput');
+    let selectedFile = null;
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length) handleFile(fileInput.files[0]);
+    });
+
+    function handleFile(file) {
+      const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowed.includes(file.type)) {
+        alert('仅支持 jpg / png / webp 图片');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('图片超过 5MB 限制');
+        return;
+      }
+      selectedFile = file;
+      $('ocrResult').style.display = 'none';
+      // 本地预览
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        $('previewImg').src = e.target.result;
+        $('preview').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+      $('ocrBtn').disabled = false;
+    }
+
+    /* ---------- 视频 URL 输入 ---------- */
+    $('videoUrl').addEventListener('input', () => {
+      $('videoBtn').disabled = !$('videoUrl').value.trim();
+      $('videoResult').style.display = 'none';
+    });
+
+    /* ---------- 身份证识别 ---------- */
+    $('ocrBtn').addEventListener('click', async () => {
+      if (!selectedFile) return;
+      setLoading('ocr', true);
+      $('ocrResult').style.display = 'none';
+      try {
+        const fd = new FormData();
+        fd.append('file', selectedFile);
+        const resp = await fetch('/api/ocr/idcard', { method: 'POST', body: fd });
+        const data = await resp.json();
+        renderOcrResult(data);
+      } catch (err) {
+        $('ocrResult').innerHTML = renderError('请求失败：' + err.message);
+        $('ocrResult').classList.remove('ok');
+        $('ocrResult').classList.add('fail');
+        $('ocrResult').style.display = 'block';
+      } finally {
+        setLoading('ocr', false);
+      }
+    });
+
+    function renderOcrResult(data) {
+      const el = $('ocrResult');
+      const ok = data.code === 0;
+      el.className = 'result ' + (ok ? 'ok' : 'fail');
+      el.style.display = 'block';
+
+      if (!ok) {
+        el.innerHTML = `
+          <div class="status"><span class="dot"></span>识别失败（code ${data.code}）</div>
+          <div class="msg">${escapeHtml(data.msg || '未知错误')}</div>
+          ${data.cost_ms != null ? `<div class="cost">耗时 ${data.cost_ms} ms</div>` : ''}
+        `;
+        return;
+      }
+
+      const d = data.data || {};
+      const isFront = d.side === 'front';
+      let kvHtml = '';
+
+      if (isFront) {
+        const fields = [
+          ['姓名', d.name], ['性别', d.gender], ['民族', d.nation],
+          ['出生日期', d.birth], ['住址', d.address], ['身份证号', d.id_number],
+        ];
+        kvHtml = fields.map(([k, v]) => renderKV(k, v)).join('');
+        kvHtml += renderKV('号码校验', d.id_valid, true);
+      } else {
+        kvHtml = renderKV('签发机关', d.authority) + renderKV('有效期限', d.valid_date);
+      }
+
+      el.innerHTML = `
+        <div class="status"><span class="dot"></span>识别成功 · ${isFront ? '正面（人像面）' : '反面（国徽面）'}</div>
+        <div class="kv-grid">${kvHtml}</div>
+        ${data.cost_ms != null ? `<div class="cost">耗时 ${data.cost_ms} ms</div>` : ''}
+      `;
+    }
+
+    /* ---------- 视频检测 ---------- */
+    $('videoBtn').addEventListener('click', async () => {
+      const url = $('videoUrl').value.trim();
+      if (!url) return;
+      setLoading('video', true);
+      $('videoResult').style.display = 'none';
+      try {
+        const resp = await fetch('/api/video/check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ video_url: url }),
+        });
+        const data = await resp.json();
+        renderVideoResult(data);
+      } catch (err) {
+        $('videoResult').innerHTML = renderError('请求失败：' + err.message);
+        $('videoResult').classList.remove('ok');
+        $('videoResult').classList.add('fail');
+        $('videoResult').style.display = 'block';
+      } finally {
+        setLoading('video', false);
+      }
+    });
+
+    function renderVideoResult(data) {
+      const el = $('videoResult');
+      const ok = data.code === 0;
+      el.className = 'result ' + (ok ? 'ok' : 'fail');
+      el.style.display = 'block';
+
+      if (!ok) {
+        el.innerHTML = `
+          <div class="status"><span class="dot"></span>检测失败（code ${data.code}）</div>
+          <div class="msg">${escapeHtml(data.msg || '未知错误')}</div>
+        `;
+        return;
+      }
+
+      const d = data.data || {};
+      const clarityPct = (d.clarity_score ?? 0).toFixed(1);
+      el.innerHTML = `
+        <div class="status"><span class="dot"></span>检测完成</div>
+        <div class="kv-grid">
+          ${renderKV('清晰度分数', clarityPct + ' / 100')}
+          ${renderKV('清晰度等级', d.clarity_level, d.is_clear)}
+          ${renderKV('是否拉伸', d.is_stretched ? '是' : '否', !d.is_stretched)}
+          ${renderKV('拉伸说明', d.stretch_desc)}
+          ${renderKV('视频分辨率', d.video_width ? d.video_width + ' × ' + d.video_height : '—')}
+          ${renderKV('采样帧位置', d.sample_frame_position != null ? d.sample_frame_position + ' s' : '—')}
+        </div>
+        ${data.cost_ms != null ? `<div class="cost">耗时 ${data.cost_ms} ms</div>` : ''}
+      `;
+    }
+
+    /* ---------- 工具函数 ---------- */
+    function renderKV(k, v, highlight) {
+      let cls = 'v';
+      if (highlight === true) cls = 'v yes';
+      else if (highlight === false) cls = 'v no';
+      const val = (v === null || v === undefined || v === '') ? '—' : v;
+      return `<div class="kv"><div class="k">${escapeHtml(k)}</div><div class="${cls}">${escapeHtml(String(val))}</div></div>`;
+    }
+
+    function renderError(msg) {
+      return `<div class="status"><span class="dot"></span>出错了</div><div class="msg">${escapeHtml(msg)}</div>`;
+    }
+
+    function setLoading(which, loading) {
+      const spinner = $(which + 'Spinner');
+      const text = $(which + 'BtnText');
+      const btn = $(which + 'Btn');
+      spinner.style.display = loading ? 'inline-block' : 'none';
+      btn.disabled = loading;
+      text.textContent = which === 'ocr'
+        ? (loading ? '识别中...' : '开始识别')
+        : (loading ? '检测中...' : '开始检测');
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+  </script>
+</body>
+</html>
