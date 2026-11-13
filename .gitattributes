@@ -1,0 +1,15 @@
+# 强制文本文件换行符规范
+# *.bat / *.cmd 在 Windows 上必须以 CRLF 换行，否则 cmd.exe 无法正确解析多行块语句
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# shell 脚本统一 LF（Linux/macOS 执行必需）
+*.sh text eol=lf
+
+# 源码与文档统一 LF，避免跨平台 diff 噪声
+*.py text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
